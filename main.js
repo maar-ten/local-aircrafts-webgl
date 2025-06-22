@@ -2,7 +2,7 @@ import { Mesh, MeshBasicMaterial, ConeGeometry, Scene, PerspectiveCamera, Hemisp
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { OpenStreetMapsProvider, MapView, UnitsUtils } from 'geo-three';
 
-let camera, controls, scene, renderer;
+let camera, controls, scene, renderer, aircraftCache = new Map();
 
 const queryString = new URLSearchParams(window.location.search);
 const mapViewLat = Number(queryString.get('lat')) ?? 52.11;
@@ -59,7 +59,11 @@ async function plotAircrafts(response) {
     }
 
     const aircraftDataArr = await response.json();
-    aircraftDataArr.forEach(aircraft => scene.add(createAircraft(aircraft)));
+    aircraftDataArr.forEach(aircraft => {
+        const aircraftGeometry = createAircraft(aircraft);
+        aircraftCache.set(aircraft, aircraftGeometry);
+        scene.add(aircraftGeometry);
+    });
 }
 
 function createAircraft({lat, lon, altitude, track}) {
@@ -72,7 +76,6 @@ function createAircraft({lat, lon, altitude, track}) {
     const aircraft = new Mesh( geometry, material );
     aircraft.position.set(coords.x, alt, -coords.y);
     aircraft.rotation.set(-Math.PI/2, 0, heading);
-    aircraft.scale.set(10, 10, 10);
     return aircraft;
 }
 
