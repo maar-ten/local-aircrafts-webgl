@@ -12,8 +12,8 @@ services:
   web:
     image: node:22-alpine
     working_dir: /app
-    command: npx http-server -d false -p 3001
+    command: npx http-server -d false -p 3000
     volumes:
       - .:/app
     ports:
-      - 3000:3000
+      - 3001:3000
