@@ -1,0 +1,74 @@
+[
+    {
+        "hex": "4ca806",
+        "flight": "",
+        "lat": 51.716976,
+        "lon": 4.531555,
+        "altitude": 38000,
+        "track": 287,
+        "speed": 377
+    },
+    {
+        "hex": "46a5e1",
+        "flight": "SEH8251 ",
+        "lat": 52.249283,
+        "lon": 5.093689,
+        "altitude": 8500,
+        "track": 92,
+        "speed": 299
+    },
+    {
+        "hex": "3c6571",
+        "flight": "DLH444  ",
+        "lat": 52.076935,
+        "lon": 5.206299,
+        "altitude": 31525,
+        "track": 318,
+        "speed": 460
+    },
+    {
+        "hex": "76cd47",
+        "flight": "SIA323  ",
+        "lat": 52.109299,
+        "lon": 5.252914,
+        "altitude": 10850,
+        "track": 115,
+        "speed": 331
+    },
+    {
+        "hex": "3c64ee",
+        "flight": "DLH405  ",
+        "lat": 51.835281,
+        "lon": 5.201358,
+        "altitude": 37000,
+        "track": 114,
+        "speed": 502
+    },
+    {
+        "hex": "4caca0",
+        "flight": "SAS77A  ",
+        "lat": 52.096848,
+        "lon": 5.317230,
+        "altitude": 27350,
+        "track": 38,
+        "speed": 489
+    },
+    {
+        "hex": "4cada4",
+        "flight": "RYR91JG ",
+        "lat": 51.729401,
+        "lon": 4.525328,
+        "altitude": 36000,
+        "track": 259,
+        "speed": 399
+    },
+    {
+        "hex": "4d21f2",
+        "flight": "RYR41ZG ",
+        "lat": 51.632204,
+        "lon": 4.501038,
+        "altitude": 32000,
+        "track": 266,
+        "speed": 370
+    }
+]
