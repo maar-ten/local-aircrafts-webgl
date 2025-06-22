@@ -86,10 +86,10 @@ async function plotAircrafts(response) {
     const aircraftDataArr = await response.json();
     aircraftDataArr.forEach(aircraft => {
         if (aircraftCache.has(aircraft.hex)) {
-            const coords = UnitsUtils.datumsToSpherical(lat, lon);
-            const alt = altitude * 0.3048;
+            const coords = UnitsUtils.datumsToSpherical(aircraft.lat, aircraft.lon);
+            const alt = aircraft.altitude * 0.3048;
             const modelOffsetRotation = MathUtils.degToRad(-90);
-            const heading = MathUtils.degToRad(track);
+            const heading = MathUtils.degToRad(aircraft.track);
             const aircraft = aircraftCache.get(aircraft.hex);
             aircraft.position.set(coords.x, alt, -coords.y);
             aircraft.rotation.y = modelOffsetRotation + heading;
