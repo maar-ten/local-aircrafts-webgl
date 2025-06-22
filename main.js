@@ -97,7 +97,7 @@ async function plotAircrafts(response) {
         }
 
         const aircraftGeometry = createAircraft(aircraft);
-        aircraftCache.set(aircraft, aircraftGeometry);
+        aircraftCache.set(aircraft.hex, aircraftGeometry);
         aircraftArray.push(aircraftGeometry);
         scene.add(aircraftGeometry);
     });
