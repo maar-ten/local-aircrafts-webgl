@@ -1,8 +1,16 @@
 import { Mesh, MeshBasicMaterial, ConeGeometry, Scene, PerspectiveCamera, HemisphereLight, Color, WebGLRenderer } from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OpenStreetMapsProvider, MapView, UnitsUtils } from 'geo-three';
+import GUI from 'lil-gui';
 
-let camera, controls, scene, renderer, aircraftCache = new Map(), aircraftArray = [];
+let camera, controls, scene, renderer;
+const scalingConfig = {
+    size: .0002,
+    minFactor: 20,
+    maxFactor: 20
+};
+const aircraftCache = new Map(), aircraftArray = [];
 
 const queryString = new URLSearchParams(window.location.search);
 const mapViewLat = Number(queryString.get('lat')) ?? 52.11;
@@ -24,7 +32,8 @@ function init() {
     camera = new PerspectiveCamera(80, 1, 0.1, 1e12);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    camera.position.set(coords.x, 100000, -coords.y + 1e-7);
+    // camera.position.set(coords.x, 100000, -coords.y + 1e-7);
+    camera.position.set(493509.34151881014, 10634.803298345265, -6724928.837833675);
 
     const map = new MapView(MapView.PLANAR, new OpenStreetMapsProvider());
     map.updateMatrixWorld(true);
@@ -39,18 +48,26 @@ function init() {
     scene.add(new HemisphereLight(0xaad3df, 0xff0000, 4));
 
     addAircrafts();
+    addScalingGui();
 
     window.addEventListener('resize', onWindowResize);
 }
 
 function logError(err) {
-  console.log(`[${err.fileName}:${err.lineNumber}:${err.columnNumber}]`, err.message)
+    console.log(`[${err.fileName}:${err.lineNumber}:${err.columnNumber}]`, err.message)
+}
+
+function addScalingGui() {
+    const gui = new GUI();
+    gui.add(scalingConfig, 'size', .0001, .01, 0.0001);
+    gui.add(scalingConfig, 'maxFactor', 1, 100, 1);
+    gui.add(scalingConfig, 'minFactor', 1, 100, 1);
 }
 
 function addAircrafts() {
     fetch('data.json')
-      .then(response => plotAircrafts(response))
-      .catch(logError);
+        .then(response => plotAircrafts(response))
+        .catch(logError);
 }
 
 async function plotAircrafts(response) {
@@ -67,16 +84,16 @@ async function plotAircrafts(response) {
     });
 }
 
-function createAircraft({lat, lon, altitude, track}) {
+function createAircraft({ lat, lon, altitude, track }) {
     const coords = UnitsUtils.datumsToSpherical(lat, lon);
     const alt = altitude * 0.3048;
     const heading = track / 360 * 2 * Math.PI;
 
-    const geometry = new ConeGeometry( 5, 10, 3 );
-    const material = new MeshBasicMaterial( { color: 0xff0000 } );
-    const aircraft = new Mesh( geometry, material );
+    const geometry = new ConeGeometry(5, 10, 3);
+    const material = new MeshBasicMaterial({ color: 0xff0000 });
+    const aircraft = new Mesh(geometry, material);
     aircraft.position.set(coords.x, alt, -coords.y);
-    aircraft.rotation.set(-Math.PI/2, 0, heading);
+    aircraft.rotation.set(-Math.PI / 2, 0, heading);
     return aircraft;
 }
 
@@ -99,9 +116,10 @@ function render() {
 }
 
 function scaleAircrafts() {
-    const size = .05;
-    const factor = controls.getDistance() * Math.min( 1.9 * Math.tan( Math.PI * camera.fov / 360 ) / camera.zoom, 7 );
-    aircraftArray.forEach(aircraft => aircraft.scale.set(1, 1, 1).multiplyScalar( factor * size / 7 ));
+    const { size, minFactor, maxFactor } = scalingConfig;
+    const factor = controls.getDistance() * Math.min(minFactor * Math.tan(Math.PI * camera.fov / 360) / camera.zoom, maxFactor);
+    const scale = factor * size;
+    aircraftArray.forEach(aircraft => aircraft.scale.set(1, 1, 1).multiplyScalar(scale));
 }
 
 let lastFrameTime = Date.now();
@@ -113,6 +131,7 @@ function updateFpsCounter() {
         const frameTime = 1000 / (now - lastFrameTime);
         document.getElementById('fps-counter').innerText = `${Math.floor(frameTime)} FPS`;
         frameCount = 0;
+        // console.log(camera.position);
     }
     lastFrameTime = now;
     frameCount++;
