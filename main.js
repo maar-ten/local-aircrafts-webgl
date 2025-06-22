@@ -1,22 +1,30 @@
-import { Mesh, MeshBasicMaterial, ConeGeometry, Scene, PerspectiveCamera, HemisphereLight, Color, WebGLRenderer } from 'three';
+import { MathUtils, Scene, PerspectiveCamera, HemisphereLight, Color, WebGLRenderer } from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OpenStreetMapsProvider, MapView, UnitsUtils } from 'geo-three';
 import GUI from 'lil-gui';
 
-let camera, controls, scene, renderer;
+const LIVE_AIRCRAFT_DATA_URL = `http://${location.hostname}:8080/data.json`;
+const POLLING_INTERVAL = 2 * 1000; // 2s
+
+let camera, controls, scene, renderer, modelAircraft;
+const aircraftCache = new Map(), aircraftArray = [];
 const scalingConfig = {
-    size: .0002,
+    size: .00002,
     minFactor: 20,
     maxFactor: 20
 };
-const aircraftCache = new Map(), aircraftArray = [];
 
 const queryString = new URLSearchParams(window.location.search);
 const mapViewLat = Number(queryString.get('lat')) ?? 52.11;
 const mapViewLon = Number(queryString.get('lon')) ?? 4.77;
 
-init();
+// load aircraft model and init world
+const gltfLoader = new GLTFLoader();
+gltfLoader.load('Airplane.glb', (gltf) => {
+    modelAircraft = gltf.scene;
+    init();
+});
 
 function init() {
     renderer = new WebGLRenderer();
@@ -32,10 +40,9 @@ function init() {
     camera = new PerspectiveCamera(80, 1, 0.1, 1e12);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    // camera.position.set(coords.x, 100000, -coords.y + 1e-7);
-    camera.position.set(493509.34151881014, 10634.803298345265, -6724928.837833675);
+    camera.position.set(coords.x, 100000, -coords.y + 1e-7);
 
-    const map = new MapView(MapView.PLANAR, new OpenStreetMapsProvider());
+    const map = new MapView(MapView.PLANAR, new OpenStreetMapsProvider('https://a.tile.openstreetmap.fr/hot/'));
     map.updateMatrixWorld(true);
     scene.add(map);
 
@@ -45,10 +52,10 @@ function init() {
     controls.zoomSpeed = 2.0;
     controls.target.set(coords.x, 0, -coords.y);
 
-    scene.add(new HemisphereLight(0xaad3df, 0xff0000, 4));
+    scene.add(new HemisphereLight(0xffffff, 0x000000, 10));
 
     addAircrafts();
-    addScalingGui();
+    // addScalingGui();
 
     window.addEventListener('resize', onWindowResize);
 }
@@ -65,10 +72,11 @@ function addScalingGui() {
 }
 
 function addAircrafts() {
-    fetch('data.json')
+    fetch(LIVE_AIRCRAFT_DATA_URL)
         .then(response => plotAircrafts(response))
         .catch(logError);
 }
+setInterval(addAircrafts, POLLING_INTERVAL);
 
 async function plotAircrafts(response) {
     if (!response.ok) {
@@ -77,6 +85,17 @@ async function plotAircrafts(response) {
 
     const aircraftDataArr = await response.json();
     aircraftDataArr.forEach(aircraft => {
+        if (aircraftCache.has(aircraft.hex)) {
+            const coords = UnitsUtils.datumsToSpherical(lat, lon);
+            const alt = altitude * 0.3048;
+            const modelOffsetRotation = MathUtils.degToRad(-90);
+            const heading = MathUtils.degToRad(track);
+            const aircraft = aircraftCache.get(aircraft.hex);
+            aircraft.position.set(coords.x, alt, -coords.y);
+            aircraft.rotation.y = modelOffsetRotation + heading;
+            return;
+        }
+
         const aircraftGeometry = createAircraft(aircraft);
         aircraftCache.set(aircraft, aircraftGeometry);
         aircraftArray.push(aircraftGeometry);
@@ -87,13 +106,12 @@ async function plotAircrafts(response) {
 function createAircraft({ lat, lon, altitude, track }) {
     const coords = UnitsUtils.datumsToSpherical(lat, lon);
     const alt = altitude * 0.3048;
-    const heading = track / 360 * 2 * Math.PI;
+    const modelOffsetRotation = MathUtils.degToRad(-90);
+    const heading = MathUtils.degToRad(track);
 
-    const geometry = new ConeGeometry(5, 10, 3);
-    const material = new MeshBasicMaterial({ color: 0xff0000 });
-    const aircraft = new Mesh(geometry, material);
+    const aircraft = modelAircraft.clone();
     aircraft.position.set(coords.x, alt, -coords.y);
-    aircraft.rotation.set(-Math.PI / 2, 0, heading);
+    aircraft.rotation.y = modelOffsetRotation + heading;
     return aircraft;
 }
 
