@@ -7,23 +7,24 @@ let camera, controls, scene, renderer;
 init();
 
 function init() {
+    const coords = UnitsUtils.datumsToSpherical(52.11, 4.77);
+
+    scene = new Scene();
+    scene.background = new Color(0xaad3df); // OSM color of water
+
+    camera = new PerspectiveCamera(80, 1, 0.1, 1e12);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    camera.position.set(coords.x, 100000, -coords.y + 1e-7);
+
     renderer = new WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setAnimationLoop(animate);
     document.body.appendChild(renderer.domElement);
 
-    scene = new Scene();
-    scene.background = new Color(0xaad3df); // OSM color of water
-
     const map = new MapView(MapView.PLANAR, new OpenStreetMapsProvider());
     map.updateMatrixWorld(true);
     scene.add(map);
-
-    const coords = UnitsUtils.datumsToSpherical(52.11, 4.77);
-
-    camera = new PerspectiveCamera(80, 1, 0.1, 1e12);
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.position.set(coords.x, 100000, -coords.y + 1e-7);
 
     controls = new MapControls(camera, renderer.domElement);
     controls.enableDamping = true;
