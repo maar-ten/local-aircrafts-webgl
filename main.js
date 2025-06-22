@@ -90,9 +90,10 @@ async function plotAircrafts(response) {
             const alt = aircraft.altitude * 0.3048;
             const modelOffsetRotation = MathUtils.degToRad(-90);
             const heading = MathUtils.degToRad(aircraft.track);
-            const aircraft = aircraftCache.get(aircraft.hex);
-            aircraft.position.set(coords.x, alt, -coords.y);
-            aircraft.rotation.y = modelOffsetRotation + heading;
+            
+            const aircraftGeometry = aircraftCache.get(aircraft.hex);
+            aircraftGeometry.position.set(coords.x, alt, -coords.y);
+            aircraftGeometry.rotation.y = modelOffsetRotation + heading;
             return;
         }
 
