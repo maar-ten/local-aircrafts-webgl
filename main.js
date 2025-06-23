@@ -1,13 +1,14 @@
 import { MathUtils, Scene, PerspectiveCamera, HemisphereLight, Color, WebGLRenderer } from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import Stats from 'three/addons/libs/stats.module.js';
 import { OpenStreetMapsProvider, MapView, UnitsUtils } from 'geo-three';
 import GUI from 'lil-gui';
 
 const LIVE_AIRCRAFT_DATA_URL = `http://${location.hostname}:8080/data.json`;
 const POLLING_INTERVAL = 2 * 1000; // 2s
 
-let camera, controls, scene, renderer, modelAircraft;
+let camera, controls, scene, renderer, stats, modelAircraft;
 const aircraftCache = new Map(), aircraftArray = [];
 const scalingConfig = {
     size: .00002,
@@ -56,6 +57,9 @@ function init() {
 
     addAircrafts();
     // addScalingGui();
+
+    stats = new Stats()
+    document.body.appendChild(stats.dom)
 
     window.addEventListener('resize', onWindowResize);
 }
@@ -124,7 +128,7 @@ function onWindowResize() {
 }
 
 function animate() {
-    updateFpsCounter();
+    stats.update();
     scaleAircrafts();
     controls.update();
     render();
@@ -139,19 +143,4 @@ function scaleAircrafts() {
     const factor = controls.getDistance() * Math.min(minFactor * Math.tan(Math.PI * camera.fov / 360) / camera.zoom, maxFactor);
     const scale = factor * size;
     aircraftArray.forEach(aircraft => aircraft.scale.set(1, 1, 1).multiplyScalar(scale));
-}
-
-let lastFrameTime = Date.now();
-let frameCount = 0;
-
-function updateFpsCounter() {
-    const now = Date.now();
-    if (frameCount % 60 === 0) {
-        const frameTime = 1000 / (now - lastFrameTime);
-        document.getElementById('fps-counter').innerText = `${Math.floor(frameTime)} FPS`;
-        frameCount = 0;
-        // console.log(camera.position);
-    }
-    lastFrameTime = now;
-    frameCount++;
 }
