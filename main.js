@@ -7,7 +7,7 @@ import Stats from 'three/addons/libs/stats.module.js';
 import { OpenStreetMapsProvider, MapView, UnitsUtils } from 'geo-three';
 import GUI from 'lil-gui';
 
-const ENVIRONMENT_TEXTURE_MAP_URL = 'https://cdn.jsdelivr.net/gh/maar-ten/local-aircrafts-webgl@industrial_sunset_puresky_1k.hdr';
+const ENVIRONMENT_TEXTURE_MAP_URL = 'https://cdn.jsdelivr.net/gh/maar-ten/local-aircrafts-webgl@main/industrial_sunset_puresky_1k.hdr';
 const LIVE_AIRCRAFT_DATA_URL = `http://${location.hostname}:8080/data.json`;
 const POLLING_INTERVAL = 2 * 1000; // 2s
 
