@@ -57,6 +57,7 @@ async function init() {
 
     controls = new MapControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    controls.zoomToCursor = true;
     controls.minDistance = 1e1;
     controls.zoomSpeed = 2.0;
     controls.target.set(coords.x, 0, -coords.y);
