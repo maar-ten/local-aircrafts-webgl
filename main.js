@@ -8,10 +8,11 @@ import { OpenStreetMapsProvider, MapView, UnitsUtils } from 'geo-three';
 import GUI from 'lil-gui';
 
 const ENVIRONMENT_TEXTURE_MAP_URL = 'https://cdn.jsdelivr.net/gh/maar-ten/local-aircrafts-webgl@main/industrial_sunset_puresky_1k.hdr';
+const AIRCRAFT_MODEL_URL = 'https://cdn.jsdelivr.net/gh/maar-ten/local-aircrafts-webgl@main/Airplane.glb';
 const LIVE_AIRCRAFT_DATA_URL = `http://${location.hostname}:8080/data.json`;
 const POLLING_INTERVAL = 2 * 1000; // 2s
 
-let camera, controls, scene, renderer, stats, modelAircraft;
+let camera, controls, scene, renderer, stats, map, modelAircraft;
 const aircraftCache = new Map(), aircraftArray = [];
 const scalingConfig = {
     size: .00002,
@@ -23,28 +24,25 @@ const queryString = new URLSearchParams(window.location.search);
 const mapViewLat = Number(queryString.get('lat')) ?? 52.11;
 const mapViewLon = Number(queryString.get('lon')) ?? 4.77;
 
-// load aircraft model and init world
-const gltfLoader = new GLTFLoader();
-gltfLoader.load('Airplane.glb', (gltf) => {
-    modelAircraft = gltf.scene;
-    init();
-});
+await new GLTFLoader().loadAsync(AIRCRAFT_MODEL_URL).then(gltf => modelAircraft = gltf.scene);
 
-function init() {
-    renderer = new Three.WebGLRenderer({antialias: true});
-    renderer.toneMapping = Three.ACESFilmicToneMapping;
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setAnimationLoop(animate);
-    document.body.appendChild(renderer.domElement);
-
+await init();
+async function init() {
     scene = new Three.Scene();
 
-    new RGBELoader().load(ENVIRONMENT_TEXTURE_MAP_URL, (texture) => {
+    await new RGBELoader().loadAsync(ENVIRONMENT_TEXTURE_MAP_URL).then(texture => {
         texture.mapping = Three.EquirectangularReflectionMapping;
         scene.environment = texture;
         scene.background = texture;
         scene.environmentIntensity = 1.5;
     });
+
+    renderer = new Three.WebGLRenderer({antialias: true});
+    renderer.toneMapping = Three.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.8;
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setAnimationLoop(animate);
+    document.body.appendChild(renderer.domElement);
 
     const coords = UnitsUtils.datumsToSpherical(mapViewLat, mapViewLon);
 
@@ -53,7 +51,7 @@ function init() {
     camera.updateProjectionMatrix();
     camera.position.set(coords.x, 100000, -coords.y + 1e-7);
 
-    const map = new MapView(MapView.PLANAR, new OpenStreetMapsProvider('https://a.tile.openstreetmap.fr/hot/'));
+    map = new MapView(MapView.PLANAR, new OpenStreetMapsProvider('https://a.tile.openstreetmap.fr/hot/'));
     map.updateMatrixWorld(true);
     scene.add(map);
 
@@ -63,7 +61,7 @@ function init() {
     controls.zoomSpeed = 2.0;
     controls.target.set(coords.x, 0, -coords.y);
 
-    addAircrafts();
+    await addAircrafts();
     addGui();
 
     stats = new Stats()
@@ -81,7 +79,7 @@ function addGui() {
     gui.add(scene, 'environmentIntensity', 0, 100, 1);
 }
 
-function addAircrafts() {
+async function addAircrafts() {
     fetch('data.json')
         .then(response => plotAircrafts(response))
         .catch(logError);
