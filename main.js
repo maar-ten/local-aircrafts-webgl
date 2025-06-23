@@ -1,10 +1,13 @@
-import { MathUtils, Scene, PerspectiveCamera, HemisphereLight, Color, WebGLRenderer } from 'three';
+import * as Three from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js'
+
 import Stats from 'three/addons/libs/stats.module.js';
 import { OpenStreetMapsProvider, MapView, UnitsUtils } from 'geo-three';
 import GUI from 'lil-gui';
 
+const ENVIRONMENT_TEXTURE_MAP_URL = 'https://cdn.jsdelivr.net/gh/maar-ten/local-aircrafts-webgl@industrial_sunset_puresky_1k.hdr';
 const LIVE_AIRCRAFT_DATA_URL = `http://${location.hostname}:8080/data.json`;
 const POLLING_INTERVAL = 2 * 1000; // 2s
 
@@ -28,17 +31,24 @@ gltfLoader.load('Airplane.glb', (gltf) => {
 });
 
 function init() {
-    renderer = new WebGLRenderer();
+    renderer = new Three.WebGLRenderer({antialias: true});
+    renderer.toneMapping = Three.ACESFilmicToneMapping;
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setAnimationLoop(animate);
     document.body.appendChild(renderer.domElement);
 
-    scene = new Scene();
-    scene.background = new Color(0xaad3df); // OSM color of water
+    scene = new Three.Scene();
+
+    new RGBELoader().load(ENVIRONMENT_TEXTURE_MAP_URL, (texture) => {
+        texture.mapping = Three.EquirectangularReflectionMapping;
+        scene.environment = texture;
+        scene.background = texture;
+        scene.environmentIntensity = 1.5;
+    });
 
     const coords = UnitsUtils.datumsToSpherical(mapViewLat, mapViewLon);
 
-    camera = new PerspectiveCamera(80, 1, 0.1, 1e12);
+    camera = new Three.PerspectiveCamera(80, 1, 100, 1e8);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     camera.position.set(coords.x, 100000, -coords.y + 1e-7);
@@ -53,10 +63,8 @@ function init() {
     controls.zoomSpeed = 2.0;
     controls.target.set(coords.x, 0, -coords.y);
 
-    scene.add(new HemisphereLight(0xffffff, 0x000000, 10));
-
     addAircrafts();
-    // addScalingGui();
+    addGui();
 
     stats = new Stats()
     document.body.appendChild(stats.dom)
@@ -68,19 +76,17 @@ function logError(err) {
     console.log(`[${err.fileName}:${err.lineNumber}:${err.columnNumber}]`, err.message)
 }
 
-function addScalingGui() {
+function addGui() {
     const gui = new GUI();
-    gui.add(scalingConfig, 'size', .0001, .01, 0.0001);
-    gui.add(scalingConfig, 'maxFactor', 1, 100, 1);
-    gui.add(scalingConfig, 'minFactor', 1, 100, 1);
+    gui.add(scene, 'environmentIntensity', 0, 100, 1);
 }
 
 function addAircrafts() {
-    fetch(LIVE_AIRCRAFT_DATA_URL)
+    fetch('data.json')
         .then(response => plotAircrafts(response))
         .catch(logError);
 }
-setInterval(addAircrafts, POLLING_INTERVAL);
+// setInterval(addAircrafts, POLLING_INTERVAL);
 
 async function plotAircrafts(response) {
     if (!response.ok) {
@@ -92,8 +98,8 @@ async function plotAircrafts(response) {
         if (aircraftCache.has(aircraft.hex)) {
             const coords = UnitsUtils.datumsToSpherical(aircraft.lat, aircraft.lon);
             const alt = aircraft.altitude * 0.3048;
-            const modelOffsetRotation = MathUtils.degToRad(-90);
-            const heading = MathUtils.degToRad(aircraft.track);
+            const modelOffsetRotation = Three.MathUtils.degToRad(-90);
+            const heading = Three.MathUtils.degToRad(aircraft.track);
             
             const aircraftGeometry = aircraftCache.get(aircraft.hex);
             aircraftGeometry.position.set(coords.x, alt, -coords.y);
@@ -111,8 +117,8 @@ async function plotAircrafts(response) {
 function createAircraft({ lat, lon, altitude, track }) {
     const coords = UnitsUtils.datumsToSpherical(lat, lon);
     const alt = altitude * 0.3048;
-    const modelOffsetRotation = MathUtils.degToRad(-90);
-    const heading = MathUtils.degToRad(track);
+    const modelOffsetRotation = Three.MathUtils.degToRad(-90);
+    const heading = Three.MathUtils.degToRad(track);
 
     const aircraft = modelAircraft.clone();
     aircraft.position.set(coords.x, alt, -coords.y);
