@@ -42,7 +42,7 @@ function toPosition(aircraft) {
 }
 
 function toHeading(aircraft) {
-    const heading = THREE.MathUtils.degToRad(MODEL_ROTATION_OFFSET + aircraft.track);
+    const heading = THREE.MathUtils.degToRad(MODEL_ROTATION_OFFSET - aircraft.track);
     return heading;
 }
 
