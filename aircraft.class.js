@@ -22,7 +22,7 @@ export class Aircraft {
     update(aircraft) {
         const position = toPosition(aircraft);
         this.model.position.copy(position);
-        this.model.rotation.z = toHeading(aircraft);
+        this.model.rotation.y = toHeading(aircraft);
 
         this.path.push(position);
         this.line = createLine(this.path);
