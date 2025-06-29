@@ -151,8 +151,6 @@ function render() {
     renderer.render(scene, camera);
 }
 
-let prevScale = 0;
-
 function scaleAircrafts() {
     const { size, minFactor, maxFactor } = scalingConfig;
     const factor = controls.getDistance() * Math.min(minFactor * Math.tan(Math.PI * camera.fov / 360) / camera.zoom, maxFactor);
