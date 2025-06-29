@@ -32,6 +32,7 @@ export class Aircraft {
     remove() {
         this.scene.remove(this.model);
         this.scene.remove(this.line);
+        this.line.geometry.dispose();
     }
 }
 
