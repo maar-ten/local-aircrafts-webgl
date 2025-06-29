@@ -10,6 +10,7 @@ export class Aircraft {
         this.model = model;
         this.scene = scene;
         this.path = [toPosition(aircraft)];
+        this.line = undefined;
 
         this.scene.add(this.model);
     }
@@ -30,6 +31,8 @@ export class Aircraft {
 
     remove() {
         this.model.clear();
+        this.line.geometry.displose();
+        
         this.scene.remove(this.model);
         this.scene.remove(this.line);
     }
