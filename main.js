@@ -88,7 +88,7 @@ async function init() {
     await addAircrafts();
     // addGui();
 
-    stats = new Stats()
+    stats = new Stats();
     document.body.appendChild(stats.dom)
 
     window.addEventListener('resize', onWindowResize);
@@ -100,7 +100,7 @@ function logError(err) {
 
 function addGui() {
     const gui = new GUI();
-    gui.add(scene, 'environmentIntensity', 0, 100, 1);
+    // gui.add(guiControls, 'deleteLine')
 }
 
 async function addAircrafts() {

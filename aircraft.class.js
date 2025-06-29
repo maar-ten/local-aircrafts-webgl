@@ -10,9 +10,10 @@ export class Aircraft {
         this.model = model;
         this.scene = scene;
         this.path = [toPosition(aircraft)];
-        this.line = undefined;
+        this.line = createLine([...this.path, ...this.path]);
 
         this.scene.add(this.model);
+        this.scene.add(this.line);
     }
 
     get hex() {
@@ -25,8 +26,7 @@ export class Aircraft {
         this.model.rotation.y = toHeading(aircraft);
 
         this.path.push(position);
-        this.line = createLine(this.path);
-        this.scene.add(this.line);
+        this.line.geometry = new THREE.BufferGeometry().setFromPoints(this.path);
     }
 
     remove() {
