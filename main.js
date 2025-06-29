@@ -2,10 +2,12 @@ import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js'
-
 import Stats from 'three/addons/libs/stats.module.js';
+
 import { OpenStreetMapsProvider, MapView, UnitsUtils } from 'geo-three';
 import GUI from 'lil-gui';
+
+import { Aircraft } from './aircraft.class.js';
 
 const ENVIRONMENT_TEXTURE_MAP_URL = 'https://cdn.jsdelivr.net/gh/maar-ten/local-aircrafts-webgl@main/industrial_sunset_puresky_1k.hdr';
 const AIRCRAFT_MODEL_URL = 'https://cdn.jsdelivr.net/gh/maar-ten/local-aircrafts-webgl@main/Airplane.glb';
@@ -39,7 +41,7 @@ async function init() {
         scene.environmentIntensity = 1.5;
     });
 
-    renderer = new THREE.WebGLRenderer({antialias: true});
+    renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.8;
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -71,8 +73,8 @@ async function init() {
     // const raycaster = new THREE.Raycaster();
     // const pointer = new THREE.Vector2();
     // renderer.domElement.addEventListener('click', event => {
-	// 	pointer.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
-	// 	pointer.y = (event.clientY / renderer.domElement.clientHeight) * -2 + 1;
+    // 	pointer.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
+    // 	pointer.y = (event.clientY / renderer.domElement.clientHeight) * -2 + 1;
 
     //     raycaster.setFromCamera(pointer, camera);
     //     const intersectedObjects = raycaster.intersectObjects(aircraftArray, true);
@@ -84,7 +86,8 @@ async function init() {
     // });
 
     await addAircrafts();
-    addGui();
+    addLines();
+    // addGui();
 
     stats = new Stats()
     document.body.appendChild(stats.dom)
@@ -101,6 +104,23 @@ function addGui() {
     gui.add(scene, 'environmentIntensity', 0, 100, 1);
 }
 
+function addLines() {
+    const coords = (lat, lon) => UnitsUtils.datumsToSpherical(lat, lon);
+    const point1 = coords(52, 5);
+    const point2 = coords(52, 4);
+    const point3 = coords(52, 3);
+
+    const material = new THREE.LineBasicMaterial({ color: 0xff00ff, linewidth: 100000 });
+    const points = [];
+    points.push(new THREE.Vector3(point1.x, 10000, -point1.y));
+    points.push(new THREE.Vector3(point2.x, 1000, -point2.y));
+    points.push(new THREE.Vector3(point3.x, 10, -point3.y));
+
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const line = new THREE.Line(geometry, material);
+    scene.add(line);
+}
+
 async function addAircrafts() {
     fetch('data.json')
         .then(response => plotAircrafts(response))
@@ -114,22 +134,24 @@ async function plotAircrafts(response) {
     }
 
     const aircraftDataArr = await response.json();
+
+    // create or update aircrafts
     aircraftDataArr.forEach(aircraft => {
         if (!aircraftCache.has(aircraft.hex)) {
-            const aircraftGeometry = modelAircraft.clone();
-            aircraftCache.set(aircraft.hex, aircraftGeometry);
-            aircraftArray.push(aircraftGeometry);
-            scene.add(aircraftGeometry);
+            const aircraftObj = new Aircraft(aircraft, modelAircraft.clone(), scene);
+            aircraftCache.set(aircraftObj.hex, aircraftObj);
+            aircraftArray.push(aircraftObj);
         }
 
-        const coords = UnitsUtils.datumsToSpherical(aircraft.lat, aircraft.lon);
-        const alt = aircraft.altitude * 0.3048; // convert to meters
-        const modelOffsetRotation = THREE.MathUtils.degToRad(-90);
-        const heading = THREE.MathUtils.degToRad(aircraft.track);
+        const aircraftObj = aircraftCache.get(aircraft.hex);
+        aircraftObj.update(aircraft);
+    });
 
-        const aircraftGeometry = aircraftCache.get(aircraft.hex);
-        aircraftGeometry.position.set(coords.x, alt, -coords.y);
-        aircraftGeometry.rotation.y = modelOffsetRotation + heading;
+    // clean up past aircrafts
+    const expiredAircrafts = aircraftArray.filter(aircraft => !aircraftDataArr.find(({hex}) => hex === aircraft.hex));
+    expiredAircrafts.forEach(aircraft => {
+        aircraft.remove();
+        aircraftCache.delete(aircraft.hex);
     });
 }
 
@@ -155,5 +177,5 @@ function scaleAircrafts() {
     const { size, minFactor, maxFactor } = scalingConfig;
     const factor = controls.getDistance() * Math.min(minFactor * Math.tan(Math.PI * camera.fov / 360) / camera.zoom, maxFactor);
     const scale = Math.min(factor * size, MAX_SCALE_PLANE);
-    aircraftArray.forEach(aircraft => aircraft.scale.set(1, 1, 1).multiplyScalar(scale));
+    aircraftArray.forEach(({model}) => model.scale.set(1, 1, 1).multiplyScalar(scale));
 }
