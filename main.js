@@ -86,7 +86,7 @@ async function init() {
     // });
 
     await addAircrafts();
-    // addGui();
+    addGui();
 
     stats = new Stats();
     document.body.appendChild(stats.dom)
@@ -99,8 +99,7 @@ function logError(err) {
 }
 
 function addGui() {
-    const gui = new GUI();
-    // gui.add(guiControls, 'deleteLine')
+    // const gui = new GUI();
 }
 
 async function addAircrafts() {
