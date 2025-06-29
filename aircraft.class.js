@@ -3,6 +3,7 @@ import { UnitsUtils } from 'geo-three';
 
 const MODEL_ROTATION_OFFSET = THREE.MathUtils.degToRad(-90);
 const LINE_MATERIAL = new THREE.LineBasicMaterial({color: 0xff00ff});
+const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
 export class Aircraft {
     constructor(aircraft, model, scene) {
@@ -22,7 +23,7 @@ export class Aircraft {
     update(aircraft) {
         const position = toPosition(aircraft);
         this.model.position.copy(position);
-        this.model.rotation.y = toHeading(aircraft);
+        this.model.rotateOnWorldAxis(Z_AXIS,toHeading(aircraft));
 
         this.path.push(position);
         this.line = createLine(this.path);
@@ -30,9 +31,6 @@ export class Aircraft {
     }
 
     remove() {
-        this.model.clear();
-        this.line.geometry.displose();
-        
         this.scene.remove(this.model);
         this.scene.remove(this.line);
     }

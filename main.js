@@ -147,7 +147,7 @@ async function plotAircrafts(response) {
         aircraftObj.update(aircraft);
     });
 
-    // clean up past aircrafts
+    // remove past aircrafts
     const expiredAircrafts = aircraftArray.filter(aircraft => !aircraftDataArr.find(({hex}) => hex === aircraft.hex));
     expiredAircrafts.forEach(aircraft => {
         aircraft.remove();
