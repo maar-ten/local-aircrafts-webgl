@@ -36,9 +36,9 @@ export class Aircraft {
 }
 
 function toPosition(aircraft) {
-    const coords = UnitsUtils.datumsToSpherical(aircraft.lat, aircraft.lon);
+    const {x ,y} = UnitsUtils.datumsToSpherical(aircraft.lat, aircraft.lon);
     const height = aircraft.altitude * 0.3048; // convert to meters
-    return new THREE.Vector3(coords.x, height ,-coords.y);
+    return new THREE.Vector3(x, height ,-y);
 }
 
 function toHeading(aircraft) {
