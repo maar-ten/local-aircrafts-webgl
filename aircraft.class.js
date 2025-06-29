@@ -1,9 +1,8 @@
 import * as THREE from 'three';
 import { UnitsUtils } from 'geo-three';
 
-const MODEL_ROTATION_OFFSET = THREE.MathUtils.degToRad(-90);
+const MODEL_ROTATION_OFFSET = -90; // degrees
 const LINE_MATERIAL = new THREE.LineBasicMaterial({color: 0xff00ff});
-const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
 export class Aircraft {
     constructor(aircraft, model, scene) {
@@ -23,7 +22,7 @@ export class Aircraft {
     update(aircraft) {
         const position = toPosition(aircraft);
         this.model.position.copy(position);
-        this.model.rotateOnWorldAxis(Z_AXIS,toHeading(aircraft));
+        this.model.rotation.z = toHeading(aircraft);
 
         this.path.push(position);
         this.line = createLine(this.path);
@@ -43,8 +42,8 @@ function toPosition(aircraft) {
 }
 
 function toHeading(aircraft) {
-    const heading = THREE.MathUtils.degToRad(aircraft.track);
-    return MODEL_ROTATION_OFFSET + heading;
+    const heading = THREE.MathUtils.degToRad(MODEL_ROTATION_OFFSET + aircraft.track);
+    return heading;
 }
 
 function createLine(points) {
