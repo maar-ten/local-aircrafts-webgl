@@ -11,6 +11,7 @@ const ENVIRONMENT_TEXTURE_MAP_URL = 'https://cdn.jsdelivr.net/gh/maar-ten/local-
 const AIRCRAFT_MODEL_URL = 'https://cdn.jsdelivr.net/gh/maar-ten/local-aircrafts-webgl@main/Airplane.glb';
 const LIVE_AIRCRAFT_DATA_URL = `http://${location.hostname}:8080/data.json`;
 const POLLING_INTERVAL = 2 * 1000; // 2s
+const MAX_SCALE_PLANE = 50;
 
 let camera, controls, scene, renderer, stats, map, modelAircraft;
 const aircraftCache = new Map(), aircraftArray = [];
@@ -150,9 +151,11 @@ function render() {
     renderer.render(scene, camera);
 }
 
+let prevScale = 0;
+
 function scaleAircrafts() {
     const { size, minFactor, maxFactor } = scalingConfig;
     const factor = controls.getDistance() * Math.min(minFactor * Math.tan(Math.PI * camera.fov / 360) / camera.zoom, maxFactor);
-    const scale = factor * size;
+    const scale = Math.min(factor * size, MAX_SCALE_PLANE);
     aircraftArray.forEach(aircraft => aircraft.scale.set(1, 1, 1).multiplyScalar(scale));
 }
