@@ -86,7 +86,6 @@ async function init() {
     // });
 
     await addAircrafts();
-    addLines();
     // addGui();
 
     stats = new Stats()
@@ -102,23 +101,6 @@ function logError(err) {
 function addGui() {
     const gui = new GUI();
     gui.add(scene, 'environmentIntensity', 0, 100, 1);
-}
-
-function addLines() {
-    const coords = (lat, lon) => UnitsUtils.datumsToSpherical(lat, lon);
-    const point1 = coords(52, 5);
-    const point2 = coords(52, 4);
-    const point3 = coords(52, 3);
-
-    const material = new THREE.LineBasicMaterial({ color: 0xff00ff, linewidth: 100000 });
-    const points = [];
-    points.push(new THREE.Vector3(point1.x, 10000, -point1.y));
-    points.push(new THREE.Vector3(point2.x, 1000, -point2.y));
-    points.push(new THREE.Vector3(point3.x, 10, -point3.y));
-
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const line = new THREE.Line(geometry, material);
-    scene.add(line);
 }
 
 async function addAircrafts() {
