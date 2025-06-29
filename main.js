@@ -1,4 +1,4 @@
-import * as Three from 'three';
+import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js'
@@ -28,25 +28,27 @@ await new GLTFLoader().loadAsync(AIRCRAFT_MODEL_URL).then(gltf => modelAircraft 
 
 await init();
 async function init() {
-    scene = new Three.Scene();
+    scene = new THREE.Scene();
 
+    // load environment map (clouds)
     await new RGBELoader().loadAsync(ENVIRONMENT_TEXTURE_MAP_URL).then(texture => {
-        texture.mapping = Three.EquirectangularReflectionMapping;
+        texture.mapping = THREE.EquirectangularReflectionMapping;
         scene.environment = texture;
         scene.background = texture;
         scene.environmentIntensity = 1.5;
     });
 
-    renderer = new Three.WebGLRenderer({antialias: true});
-    renderer.toneMapping = Three.ACESFilmicToneMapping;
+    renderer = new THREE.WebGLRenderer({antialias: true});
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.8;
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setAnimationLoop(animate);
     document.body.appendChild(renderer.domElement);
 
+    // initial coordinates are taken from the URL query params
     const coords = UnitsUtils.datumsToSpherical(mapViewLat, mapViewLon);
 
-    camera = new Three.PerspectiveCamera(80, 1, 100, 1e8);
+    camera = new THREE.PerspectiveCamera(80, 1, 100, 1e8);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     camera.position.set(coords.x, 100000, -coords.y + 1e-7);
@@ -55,12 +57,30 @@ async function init() {
     map.updateMatrixWorld(true);
     scene.add(map);
 
+    // controls for the camera
     controls = new MapControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.zoomToCursor = true;
     controls.minDistance = 1e1;
     controls.zoomSpeed = 2.0;
+    controls.maxPolarAngle = Math.PI / 2 - .001; // disable the camera from going below the map
     controls.target.set(coords.x, 0, -coords.y);
+
+    // click on an aircraft and move the camera to that aircraft's pilot position
+    // const raycaster = new THREE.Raycaster();
+    // const pointer = new THREE.Vector2();
+    // renderer.domElement.addEventListener('click', event => {
+	// 	pointer.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
+	// 	pointer.y = (event.clientY / renderer.domElement.clientHeight) * -2 + 1;
+
+    //     raycaster.setFromCamera(pointer, camera);
+    //     const intersectedObjects = raycaster.intersectObjects(aircraftArray, true);
+    //     if (intersectedObjects.length) {
+    //         controls.target.x = intersectedObjects[0].point.x;
+    //         controls.target.y = intersectedObjects[0].point.y;
+    //         controls.target.z = intersectedObjects[0].point.z;
+    //     }
+    // });
 
     await addAircrafts();
     addGui();
@@ -94,35 +114,22 @@ async function plotAircrafts(response) {
 
     const aircraftDataArr = await response.json();
     aircraftDataArr.forEach(aircraft => {
-        if (aircraftCache.has(aircraft.hex)) {
-            const coords = UnitsUtils.datumsToSpherical(aircraft.lat, aircraft.lon);
-            const alt = aircraft.altitude * 0.3048;
-            const modelOffsetRotation = Three.MathUtils.degToRad(-90);
-            const heading = Three.MathUtils.degToRad(aircraft.track);
-            
-            const aircraftGeometry = aircraftCache.get(aircraft.hex);
-            aircraftGeometry.position.set(coords.x, alt, -coords.y);
-            aircraftGeometry.rotation.y = modelOffsetRotation + heading;
-            return;
+        if (!aircraftCache.has(aircraft.hex)) {
+            const aircraftGeometry = modelAircraft.clone();
+            aircraftCache.set(aircraft.hex, aircraftGeometry);
+            aircraftArray.push(aircraftGeometry);
+            scene.add(aircraftGeometry);
         }
 
-        const aircraftGeometry = createAircraft(aircraft);
-        aircraftCache.set(aircraft.hex, aircraftGeometry);
-        aircraftArray.push(aircraftGeometry);
-        scene.add(aircraftGeometry);
+        const coords = UnitsUtils.datumsToSpherical(aircraft.lat, aircraft.lon);
+        const alt = aircraft.altitude * 0.3048; // convert to meters
+        const modelOffsetRotation = THREE.MathUtils.degToRad(-90);
+        const heading = THREE.MathUtils.degToRad(aircraft.track);
+
+        const aircraftGeometry = aircraftCache.get(aircraft.hex);
+        aircraftGeometry.position.set(coords.x, alt, -coords.y);
+        aircraftGeometry.rotation.y = modelOffsetRotation + heading;
     });
-}
-
-function createAircraft({ lat, lon, altitude, track }) {
-    const coords = UnitsUtils.datumsToSpherical(lat, lon);
-    const alt = altitude * 0.3048;
-    const modelOffsetRotation = Three.MathUtils.degToRad(-90);
-    const heading = Three.MathUtils.degToRad(track);
-
-    const aircraft = modelAircraft.clone();
-    aircraft.position.set(coords.x, alt, -coords.y);
-    aircraft.rotation.y = modelOffsetRotation + heading;
-    return aircraft;
 }
 
 function onWindowResize() {
