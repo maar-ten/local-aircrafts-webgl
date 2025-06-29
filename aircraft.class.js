@@ -10,10 +10,8 @@ export class Aircraft {
         this.model = model;
         this.scene = scene;
         this.path = [toPosition(aircraft)];
-        this.line = createLine(this.path);
 
         this.scene.add(this.model);
-        this.scene.add(this.line);
     }
 
     get hex() {
@@ -26,7 +24,8 @@ export class Aircraft {
         this.model.rotation.y = toHeading(aircraft);
 
         this.path.push(position);
-        this.line.geometry.setFromPoints(this.path);
+        this.line = createLine(this.path);
+        this.scene.add(this.line);
     }
 
     remove() {
