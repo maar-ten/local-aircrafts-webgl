@@ -12,6 +12,7 @@ export class Aircraft {
         this.path = [toPosition(aircraft)];
         this.line = createLine(this.path);
 
+        // clone the material to change the color of each aircraft individually
         this.material = this.model.children[0].children[2].material.clone();
         this.model.children[0].children[2].material = this.material;
 
