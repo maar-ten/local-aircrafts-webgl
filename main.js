@@ -12,6 +12,7 @@ import { Aircraft } from './aircraft.class.js';
 const ENVIRONMENT_TEXTURE_MAP_URL = 'https://cdn.jsdelivr.net/gh/maar-ten/local-aircrafts-webgl@main/industrial_sunset_puresky_1k.hdr';
 const AIRCRAFT_MODEL_URL = 'https://cdn.jsdelivr.net/gh/maar-ten/local-aircrafts-webgl@main/Airplane.glb';
 const LIVE_AIRCRAFT_DATA_URL = `http://${location.hostname}:8080/data.json`;
+const PAST_AIRCRAFT_DATA = 'past-aircrafts.log';
 const POLLING_INTERVAL = 2 * 1000; // 2s
 const MAX_SCALE_PLANE = 50;
 
@@ -85,7 +86,7 @@ async function init() {
     //     }
     // });
 
-    await addAircrafts();
+    await addPastAircrafts();
     addGui();
 
     stats = new Stats();
@@ -102,14 +103,14 @@ function addGui() {
     // const gui = new GUI();
 }
 
-async function addAircrafts() {
-    fetch('data.json')
-        .then(response => plotAircrafts(response))
+async function updateLiveAircrafts() {
+    fetch(LIVE_AIRCRAFT_DATA_URL)
+        .then(response => plotLiveAircrafts(response))
         .catch(logError);
 }
-// setInterval(addAircrafts, POLLING_INTERVAL);
+// setInterval(updateLiveAircrafts, POLLING_INTERVAL);
 
-async function plotAircrafts(response) {
+async function plotLiveAircrafts(response) {
     if (!response.ok) {
         throw new Error(`Response not OK: ${response.status}`);
     }
@@ -136,6 +137,45 @@ async function plotAircrafts(response) {
     });
 }
 
+async function plotPastAircrafts(response) {
+    if (!response.ok) {
+        throw new Error(`Response not OK: ${response.status}`);
+    }
+
+    // const aircraftDataArr = await response.json();
+    const aircraftData = await response.text();
+    const aircraftDataLines = aircraftData.split('\n');
+
+    const aircraftDataArr = aircraftDataLines.map(line => line.split(','))
+        .map(arr => ({
+            hex: arr[1],
+            flight: arr[2],
+            time: arr[3],
+            lat: Number(arr[4]),
+            lon: Number(arr[5]),
+            altitude: Number(arr[7]),
+            speed: Number(arr[8]),
+            track: Number(arr[9]),
+        }));
+
+    aircraftDataArr.forEach(aircraft => {
+        if (!aircraftCache.has(aircraft.hex)) {
+            const aircraftObj = new Aircraft(aircraft, modelAircraft.clone(), scene);
+            aircraftCache.set(aircraftObj.hex, aircraftObj);
+            aircraftArray.push(aircraftObj);
+        }
+
+        const aircraftObj = aircraftCache.get(aircraft.hex);
+        aircraftObj.update(aircraft);
+    });
+}
+
+async function addPastAircrafts() {
+    fetch(PAST_AIRCRAFT_DATA)
+        .then(response => plotPastAircrafts(response))
+        .catch(logError);
+}
+
 function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -158,5 +198,5 @@ function scaleAircrafts() {
     const { size, minFactor, maxFactor } = scalingConfig;
     const factor = controls.getDistance() * Math.min(minFactor * Math.tan(Math.PI * camera.fov / 360) / camera.zoom, maxFactor);
     const scale = Math.min(factor * size, MAX_SCALE_PLANE);
-    aircraftArray.forEach(({model}) => model.scale.set(1, 1, 1).multiplyScalar(scale));
+    aircraftArray.forEach(({ model }) => model.scale.set(1, 1, 1).multiplyScalar(scale));
 }

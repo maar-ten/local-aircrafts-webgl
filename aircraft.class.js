@@ -12,6 +12,9 @@ export class Aircraft {
         this.path = [toPosition(aircraft)];
         this.line = createLine(this.path);
 
+        this.material = this.model.children[0].children[2].material.clone();
+        this.model.children[0].children[2].material = this.material;
+
         this.scene.add(this.model);
         this.scene.add(this.line);
     }
@@ -24,9 +27,9 @@ export class Aircraft {
         const position = toPosition(aircraft);
         this.model.position.copy(position);
         this.model.rotation.y = toHeading(aircraft);
+        this.material.color = getAltitudeColor(aircraft.altitude);
 
         this.path.push(position);
-        this.line.geometry = new THREE.BufferGeometry().setFromPoints(this.path);
     }
 
     remove() {
@@ -49,4 +52,14 @@ function toHeading(aircraft) {
 function createLine(points) {
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
     return new THREE.Line(geometry, LINE_MATERIAL);
+}
+
+function getAltitudeColor(altitude) {
+    const maximumAltitude = 40000;
+    const relativeAltitude = Math.min(Number(altitude) / maximumAltitude, 1);
+
+    const hue = 50 + Math.floor(310 * relativeAltitude); // between yellow (50) and red (360)
+    const color = new THREE.Color();
+    color.setHSL(relativeAltitude, 1, .5);
+    return color;
 }
