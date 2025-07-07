@@ -86,7 +86,7 @@ async function init() {
     //     }
     // });
 
-    await addPastAircrafts();
+    // await addPastAircrafts();
     addGui();
 
     stats = new Stats();
@@ -108,7 +108,7 @@ async function updateLiveAircrafts() {
         .then(response => plotLiveAircrafts(response))
         .catch(logError);
 }
-// setInterval(updateLiveAircrafts, POLLING_INTERVAL);
+setInterval(updateLiveAircrafts, POLLING_INTERVAL);
 
 async function plotLiveAircrafts(response) {
     if (!response.ok) {
