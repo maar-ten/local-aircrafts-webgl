@@ -31,6 +31,7 @@ export class Aircraft {
         this.material.color = getAltitudeColor(aircraft.altitude);
 
         this.path.push(position);
+        this.line.geometry = new THREE.BufferGeometry().setFromPoints(this.path);
     }
 
     remove() {
